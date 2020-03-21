@@ -20,7 +20,7 @@ When the day for delivery comes the logistics manager is logging in to the syste
  ![inventory](https://github.com/deyanstoyanov10/Hotels-Admin-Panel/blob/master/AdminPanelApp/wwwroot/images/history.png)
  
  #### And More
- ![inventory](https://github.com/deyanstoyanov10/Hotels-Admin-Panel/blob/master/AdminPanelApp/wwwroot/images/adminpanel,jpg)
+ ![inventory](https://github.com/deyanstoyanov10/Hotels-Admin-Panel/blob/master/AdminPanelApp/wwwroot/images/adminpanel.jpg)
  
 ### Installing
 
