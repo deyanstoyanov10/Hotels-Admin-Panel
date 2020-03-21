@@ -56,7 +56,7 @@
 
         public async Task<List<Requisitions>> GetRequisitionsForApproval()
         {
-            var requisitions = this.context.Requisitions.Where(x => x.Status == 1 && x.Status == 0).OrderByDescending(x => x.Date).ToList();
+            var requisitions = this.context.Requisitions.Where(x => x.Status == 1 || x.Status == 0).OrderByDescending(x => x.Date).ToList();
             int count = requisitions.Count;
 
             for (int i = 0; i < count; i++)
