@@ -9,6 +9,19 @@ When the logistics manager logs in the system, he would see that he has one orde
 He has the option to decline a specific item and approve only several items in the order. By seeing the items and making his choice he could approve or decline the order. By the logistics manager clicking confirm an automatic e-mail has been send to the requester that the order has been processed an approved.
 When the day for delivery comes the logistics manager is logging in to the system and  by clicking confirm and send email to suppliers the logistics manager has send the items that are needed. And the supplier proceeds with delivery.
 
+### Pictures
+ #### Dashboard
+ ![inventory](https://github.com/deyanstoyanov10/Cars-Web-Application/blob/master/CarsWebApp/wwwroot/images/dashboard.png)
+ 
+ #### PurchaseRequisition
+ ![inventory](https://github.com/deyanstoyanov10/Cars-Web-Application/blob/master/CarsWebApp/wwwroot/images/purchaseRequisition.png)
+ 
+ #### History
+ ![inventory](https://github.com/deyanstoyanov10/Cars-Web-Application/blob/master/CarsWebApp/wwwroot/images/history.png)
+ 
+ #### And More
+ ![inventory](https://github.com/deyanstoyanov10/Cars-Web-Application/blob/master/CarsWebApp/wwwroot/images/adminpanel.jpg)
+ 
 ### Installing
 
 You can deploy this site in azure with a few steps.
