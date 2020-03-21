@@ -1,14 +1,14 @@
 ﻿namespace AdminPanelApp.Controllers
 {
-    using System;
     using System.Threading.Tasks;
 
     using Microsoft.AspNetCore.Mvc;
+    using Microsoft.AspNetCore.Authorization;
 
     using Models;
-    using Models.Enums;
     using Services.Contracts;
 
+    [Authorize]
     public class PurchaseController : Controller
     {
         private IRequisitionService requisitionService;

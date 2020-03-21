@@ -4,12 +4,15 @@
     using System.Threading.Tasks;
 
     using Microsoft.AspNetCore.Mvc;
+    using Microsoft.AspNetCore.Authorization;
 
     using Newtonsoft.Json;
 
     using Models.Enums;
     using Services.Contracts;
 
+
+    [Authorize]
     [Route("api/[controller]/[action]")]
     [ApiController]
     public class ValuesController : ControllerBase
