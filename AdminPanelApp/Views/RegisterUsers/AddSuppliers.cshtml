@@ -1,0 +1,96 @@
+﻿@using AdminPanelApp.Common
+@using AdminPanelApp.Services.Contracts
+@model AddSupplierModel
+@inject IAdminService  AdminService
+@{
+    ViewData["Title"] = "Add Suppliers";
+    ViewData["ActivePage"] = MenuPages.AddSuppliers;
+    var suppliers = await AdminService.GetAllSuppliers();
+}
+<div class="content">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="title">Added Suppliers</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table">
+                        <thead class="text-primary">
+                        <th scope="col">Name</th>
+                        <th scope="col">Email</th>
+                        <th scope="col">Remove</th>
+                        </thead>
+                        <tbody>
+                            @foreach (var supplier in suppliers)
+                            {
+                                <tr>
+                                    <td>@supplier.Name</td>
+                                    <td>@supplier.Email</td>
+                                    <td><button id="remove" class="btn btn-danger" value="@supplier.Id" onclick="RemoveSupplier(this.value)"><i class="now-ui-icons ui-1_simple-remove"></i></button></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="title">Add Supplier</h5>
+                </div>
+                <div class="card-body">
+                    <form asp-action="RegisterSupplier" asp-controller="RegisterUsers" method="post">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label asp-for="Name"></label>
+                                    <input type="text" class="form-control" asp-for="Name">
+                                    <span asp-validation-for="Name" class="text-danger"></span>
+                                </div>
+                            </div>
+
+                        </div>
+                        <div class="row">
+
+                            <div class="col-md-12 pl-1">
+                                <div class="form-group">
+                                    <label asp-for="Email"></label>
+                                    <input type="text" class="form-control" asp-for="Email">
+                                    <span asp-validation-for="Email" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <button type="submit" class="btn btn-primary">Add Supplier</button>
+                                </div>
+                            </div>
+                        </div>
+                        @Html.AntiForgeryToken()
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        function RemoveSupplier(supplierId) {
+            $(document).ready(function () {
+                $.ajax({
+                    type: 'GET',
+                    data: { supplierId: supplierId },
+                    url: '@Url.Action("RemoveSupplier", "Values", new { httproute = "api"})',
+                    success: function (result) {
+                        window.location.reload(true);
+                    }
+                })
+            })
+        }
+    </script>
+}

@@ -1,0 +1,307 @@
+﻿@using AdminPanelApp.Common
+@using AdminPanelApp.Services.Contracts
+@inject IAdminService  AdminService
+@{
+    ViewData["Title"] = "Requisition History";
+    ViewData["ActivePage"] = MenuPages.History;
+    var months = await AdminService.GetLatestMonths();
+    var hotels = await AdminService.GetAllHotels();
+    var suppliers = await AdminService.GetAllSuppliers();
+    string[] monthNames = { "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
+}
+<style>
+    .table-wrapper {
+        height: 400px;
+        overflow: auto;
+    }
+</style>
+<div class="content">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="title">Requisition Items</h5>
+                </div>
+                <div class="card-body">
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="table-wrapper">
+                                <div id="requisitionIdDiv">
+                                    <input id="requisitionId" name="requisitionId" type="hidden">
+                                </div>
+                                <table class="table">
+                                    <thead class="text-primary">
+                                    <th>Id</th>
+                                    <th>Status</th>
+                                    <th>Name</th>
+                                    <th>Packaging</th>
+                                    <th>Unit</th>
+                                    <th>Quantity</th>
+                                    <th>Category</th>
+                                    <th>Price</th>
+                                    <th>Supplier</th>
+                                    <th>Update</th>
+                                    <th>Delete</th>
+                                    </thead>
+                                    <tbody id="appendProducts">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header">
+            <h5 class="title">Requisitions</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3 pr-1">
+                    <div class="form-group">
+                        <select id="selectDate" onchange="ChangeRequisitions(this.value, null)" class="form-control nav-item dropdown">
+                            @for (int i = 0; i < months.Count; i++)
+                            {
+                                <option value="@i">@monthNames[months[i].Month - 1] @months[i].Year</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3 pr-1">
+                    <div class="form-group">
+                        <select id="selectHotel" class="form-control nav-item dropdown">
+                            <option selected>Select Hotel</option>
+                            @for (int i = 0; i < hotels.Count; i++)
+                            {
+                                <option value="@i">@hotels[i].Name</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-1"></div>
+                <div class="col-md-5">
+                    <form style="display:flex;" asp-action="DownloadProductTable" asp-controller="Management" method="post">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <select id="selectHotel" name="supplierId" class="form-control nav-item dropdown">
+                                    <option selected>Select Supplier</option>
+                                    @for (int i = 0; i < suppliers.Count; i++)
+                                    {
+                                        <option value="@suppliers[i].Id">@suppliers[i].Name</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <input type="hidden" id="dateIndex" name="dateIndex"/>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <button id="buttonConfirm" name="button" class="btn btn-primary btn-block" style="color:white;">Download</button>
+                            </div>
+                        </div>
+
+
+                    </form>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="table-wrapper">
+                        <table class="table">
+                            <thead class="text-primary">
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th>Location</th>
+                            <th>TotalPrice</th>
+                            <th>From</th>
+                            <th>Open</th>
+                            </thead>
+                            <tbody id="appendRequisitions">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts{ 
+    <script>
+    $(document).ready(function () {
+        UpdateTable(0, null);
+        document.getElementById("dateIndex").value = '0';
+    })
+
+    function UpdateTable(index, hotelIndex) {
+        $(document).ready(function () {
+            $.ajax({
+                type: 'GET',
+                data: {index: index, hotelIndex: hotelIndex},
+                url: '@Url.Action("GetRequisitionsFromMonth", "Values", new { httproute = "api" })',
+                success: function (result) {
+                    var requisitions = JSON.parse(result);
+                    var requisitionsCount = requisitions.length;
+                    var append = '';
+                    for (var i = 0; i < requisitionsCount; i++) {
+                        append += "<tr><td style=\"width:15%;\">";
+
+                        if (requisitions[i].Status == 0) {
+                            append += "<span class=\"badge badge-primary\">Open</span>";
+                        }
+                        else if (requisitions[i].Status == 1) {
+                            append += "<span class=\"badge badge-warning\">Pending</span>";
+                        }
+                        else if (requisitions[i].Status == 2) {
+                            append += "<span class=\"badge badge-success\">Approved</span>";
+                        }
+                        else if (requisitions[i].Status == 3) {
+                            append += "<span class=\"badge badge-danger\">Rejected</span>";
+                        }
+                        else if (requisitions[i].Status == 4) {
+                            append += "<span class=\"badge badge-secondary\">Over</span>";
+                        }
+                        append += "</td>";
+
+                        var date = new Date(requisitions[i].Date);
+                        var dateFormat = '';
+
+                        if (date.getHours() < 10) {
+                            dateFormat += '0' + date.getHours() + ':';
+                        }
+                        else {
+                            dateFormat += date.getHours() + ':';
+                        }
+
+                        if (date.getMinutes() < 10) {
+                            dateFormat += '0' + date.getMinutes();
+                        }
+                        else {
+                            dateFormat += date.getMinutes();
+                        }
+
+                        dateFormat += " ";
+                        if (date.getDate() < 10) {
+                            dateFormat += '0' + date.getDate();
+                        }
+                        else {
+                            dateFormat += date.getDate();
+                        }
+                        dateFormat += "-";
+
+                        if (date.getMonth() < 10) {
+                            dateFormat += '0' + date.getMonth();
+                        }
+                        else {
+                            dateFormat += date.getMonth();
+                        }
+                        dateFormat += "-";
+
+                        dateFormat += ""+date.getFullYear()+"";
+                        append += "<td>"+dateFormat+"</td>";
+                        append += "<td>" + requisitions[i].Location + "</td>";
+
+                        var formatter = new Intl.NumberFormat('en-US', {
+                            style: 'currency',
+                            currency: 'DKK'
+                        });
+
+                        append += "<td>"+formatter.format(requisitions[i].Total)+"</td>";
+                        append += "<td>"+requisitions[i].AddedBy+"</td>";
+                        append += "<td><button class=\"btn btn-primary\" value=\""+requisitions[i].Id+"\" onclick=\"OpenRequisition(this.value)\"><i class=\"now-ui-icons arrows-1_minimal-up\"></i></button></td></tr>";
+                    }
+                    $("#appendRequisitions").html("");
+                    $("#appendRequisitions").html(append);
+                }
+            })
+        })
+    }
+
+    function ChangeRequisitions(index) {
+        UpdateTable(index, null);
+        document.getElementById("dateIndex").value = index;
+    }
+
+    function OpenRequisition(requisitionId) {
+        $(document).ready(function () {
+            $.ajax({
+                type: 'GET',
+                data: {requisitionId: requisitionId },
+                url: '@Url.Action("GetProductsForRequisition", "Values", new { httproute = "api" })',
+                success: function (result) {
+                    var products = JSON.parse(result);
+                    var productsCount = products.length;
+                    var append = '';
+                    
+                    for (var i = 0; i < productsCount; i++) {
+
+                        append += "<tr><td>" + products[i].Id + "</td>";
+                        append += "<td style=\"width:15%;\">";
+                        if (products[i].Status == 0) {
+                            append += "<span class=\"badge badge-warning\">Pending</span>";
+                        }
+                        else if (products[i].Status == 1) {
+                            append += "<span class=\"badge badge-success\">Approved</span>";
+                        }
+                        else if (products[i].Status == 2) {
+                            append += "<span class=\"badge badge-danger\">Rejected</span>";
+                        }
+                        append += "</td>";
+                        append += "<td>" + products[i].Name + "</td>";
+                        append += "<td>" + products[i].Packaging + "</td>";
+                        append += "<td>"+products[i].Unit+"</td>";
+                        append += "<td><input id=\""+products[i].Id+"\" type=\"number\" class=\"form-control\" value="+products[i].Quantity+" /></td>";
+                        append += "<td>"+products[i].Category+"</td>";
+                        append += "<td>"+products[i].Price+"</td>";
+                        append += "<td>"+products[i].Supplier+"</td>";
+                        append += "<td><button class=\"btn btn-primary\" value=\""+products[i].Id+"\" onclick=\"UpdateProduct(this.value)\"><i class=\"now-ui-icons arrows-1_cloud-upload-94\"></i></button></td>";
+                        append += "<td><button class=\"btn btn-danger\" value=\""+products[i].Id+"\" onclick=\"RemoveProduct(this.value)\"><i class=\"now-ui-icons ui-1_simple-remove\"></i></button></td></tr>";
+
+                    }
+                    $("#requisitionId").val("");
+                    $("#requisitionId").val(requisitionId);
+
+                    $("#appendProducts").html("");
+                    $("#appendProducts").html(append);
+                }
+            })
+        })
+    }
+
+    $("#selectHotel").on('change', function () {
+        var dateIndex = document.getElementById("selectDate").value;
+        var hotelIndex = document.getElementById("selectHotel").value;
+        UpdateTable(dateIndex, hotelIndex);
+    })
+
+    function UpdateProduct(productId) {
+        $(document).ready(function () {
+            var quantity = document.getElementById(productId).value;
+            var requisitionId = document.getElementById("requisitionId").value;
+                $.ajax({
+                    type: 'GET',
+                    data: { productId: productId, quantity: quantity },
+                    url: '@Url.Action("UpdateProduct", "Values", new { httproute = "api" })',
+                    success: function (result) {
+                        OpenRequisition(requisitionId);
+                    }
+                })
+            })
+        }
+
+        function RemoveProduct(productId) {
+            $(document).ready(function () {
+            var requisitionId = document.getElementById("requisitionId").value;
+                $.ajax({
+                    type: 'GET',
+                    data: { productId: productId },
+                    url: '@Url.Action("RemoveProductFromRequistion", "Values", new { httproute = "api" })',
+                    success: function (result) {
+                        OpenRequisition(requisitionId);
+                    }
+                })
+            })
+        }
+    </script>
+}

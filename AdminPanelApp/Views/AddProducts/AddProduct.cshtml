@@ -1,0 +1,180 @@
+﻿@using AdminPanelApp.Common
+@using AdminPanelApp.Models.Enums
+@using AdminPanelApp.Services.Contracts
+@model AddProductModel
+@inject IProductService  ProductService
+@{
+    ViewData["Title"] = "Add Products";
+    ViewData["ActivePage"] = MenuPages.AddProducts;
+    int currentPage = int.Parse(ViewContext.RouteData.Values["id"].ToString());
+    int nextPage = currentPage + 1;
+    int previousPage = currentPage - 1;
+    int countAllProducts = await ProductService.CountAllProducts();
+    var productList = await ProductService.GetAddedProductsDesc(currentPage);
+
+    var suppliers = await ProductService.GetSupplierNames();
+}
+<div class="content">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="title">@ViewData["Title"]</h5>
+                </div>
+                <div class="card-body">
+                    <form id="apply" asp-action="AddProductPost" asp-controller="AddProducts" asp-antiforgery="true" method="post" enctype="multipart/form-data">
+                        <div class="row">
+                            <div class="col-md-5 pr-1">
+                                <div class="form-group">
+                                    <label>Name</label>
+                                    <input type="text" class="form-control" asp-for="Name" placeholder="Name">
+                                    <span asp-validation-for="Name" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-3 px-1">
+                                <div class="form-group">
+                                    <label>Unit</label>
+                                    <input class="form-control" asp-for="Unit">
+                                    <span asp-validation-for="Unit" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-4 pl-1">
+                                <div class="form-group">
+                                    <label>Price</label>
+                                    <input type="number" class="form-control" asp-for="Price" min="1">
+                                    <span asp-validation-for="Price" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 pr-1">
+                                <div class="form-group">
+                                    <label>Packaging</label>
+                                    <input type="text" class="form-control" asp-for="Packaging">
+                                    <span asp-validation-for="Packaging" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-4 pr-1">
+                                <div class="form-group">
+                                    <label>Category</label>
+                                    <select asp-for="Category" class="form-control nav-item dropdown" asp-items="Html.GetEnumSelectList<Category>()">
+                                        <option selected>Select Category</option>
+                                    </select>
+                                    <span asp-validation-for="Category" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-4 pl-1">
+                                <div class="form-group">
+                                    <label>Supplier</label>
+                                    <select asp-for="Supplier" class="form-control nav-item dropdown">
+                                        <option selected>Select Supplier</option>
+                                        @foreach (var supplier in suppliers)
+                                        {
+                                        <option value="@supplier.Name">@supplier.Name</option>
+                                        }
+                                    </select>
+                                    <span asp-validation-for="Supplier" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label>Add Picture</label>
+                                    <input type="file" name="file" accept="image/png, image/jpeg" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <button class="btn btn-primary btn-block" style="color:white;">Add Product</button>
+                        </div>
+                        @Html.AntiForgeryToken()
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title">Added Products</h4>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead class="text-primary">
+                            <th scope="col">Product Image</th>
+                            <th scope="col">Name</th>
+                            <th scope="col">Packaging</th>
+                            <th scope="col">Unit</th>
+                            <th scope="col">Price</th>
+                            <th scope="col">Category</th>
+                            <th scope="col">Remove</th>
+                            </thead>
+                            <tbody>
+                                @foreach (var product in productList)
+                                {
+                                    var picture = Convert.ToBase64String(product.Picture);
+                                    <tr>
+                                        <td style="width:15%;"><img class="img-rounded" src="data:image/png;base64, @picture"/></td>
+                                        <td>@product.Name</td>
+                                        <td>@product.Packaging</td>
+                                        <td>@product.Unit</td>
+                                        <td>@product.Price DKK</td>
+                                        <td>@product.Category</td>
+                                        <td>
+                                        <button id="remove" value="@product.Id" onclick="RemoveProduct(this.value)"><i class="now-ui-icons ui-1_simple-remove"></i></button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                        <ul class="pagination">
+                            @if (currentPage == 1 && (currentPage * 5) < countAllProducts)
+                            {
+                                <li class="page-item disabled"><a class="page-link" href="#">Previous</a></li>
+                                <li class="page-item active"><a class="page-link" asp-action="AddProduct" asp-controller="AddProducts" asp-route-id="@currentPage">@currentPage</a></li>
+                                <li class="page-item"><a class="page-link" asp-action="AddProduct" asp-controller="AddProducts" asp-route-id="@nextPage">Next</a></li>
+                            }
+                            else if (currentPage > 1 && (currentPage * 5) < countAllProducts)
+                            {
+                                <li class="page-item"><a class="page-link" asp-action="AddProduct" asp-controller="AddProducts" asp-route-id="@previousPage">Previous</a></li>
+                                <li class="page-item active"><a class="page-link" asp-action="AddProduct" asp-controller="AddProducts" asp-route-id="@currentPage">@currentPage</a></li>
+                                <li class="page-item"><a class="page-link" asp-action="AddProduct" asp-controller="AddProducts" asp-route-id="@nextPage">Next</a></li>
+                            }
+                            else if (currentPage > 1 && (currentPage * 5) >= countAllProducts)
+                            {
+                                <li class="page-item"><a class="page-link" asp-action="AddProduct" asp-controller="AddProducts" asp-route-id="@previousPage">Previous</a></li>
+                                <li class="page-item active"><a class="page-link" asp-action="AddProduct" asp-controller="AddProducts" asp-route-id="@currentPage">@currentPage</a></li>
+                                <li class="page-item disabled"><a class="page-link" href="#">Next</a></li>
+                            }
+                            else if (currentPage == 1 && (currentPage * 5) >= countAllProducts)
+                            {
+                                <li class="page-item disabled"><a class="page-link" href="#">Previous</a></li>
+                                <li class="page-item active"><a class="page-link" asp-action="AddProduct" asp-controller="AddProducts" asp-route-id="@currentPage">@currentPage</a></li>
+                                <li class="page-item disabled"><a class="page-link" href="#">Next</a></li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        function RemoveProduct(productId) {
+            $(document).ready(function () {
+                $.ajax({
+                    type: 'GET',
+                    data: { productId: productId },
+                    url: '@Url.Action("RemoveProduct", "Values", new { httproute = "api"})',
+                    success: function (result) {
+                        window.location.reload(true);
+                    }
+                })
+            })
+        }
+    </script>
+}

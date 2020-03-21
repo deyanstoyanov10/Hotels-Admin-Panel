@@ -1,0 +1,45 @@
+﻿@using AdminPanelApp.Common
+@using AdminPanelApp.Services.Contracts
+@model NextScheduleModel
+@inject IAdminService AdminService
+@{
+    ViewData["Title"] = "Change Email Time For Suppliers";
+    ViewData["ActivePage"] = MenuPages.ChangeEmailTime;
+    var nextSchedule = await this.AdminService.GetNextProductSchedule();
+    string[] monthNames = { "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" };
+}
+<div class="content">
+    <div class="row">
+        <div class="col-md-5">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="title">Current Email Time => @nextSchedule.Day @monthNames[nextSchedule.Month - 1] @nextSchedule.Year</h5>
+                </div>
+                <div class="card-body">
+                    <form asp-action="ChangeEmailSchedule" asp-controller="Management" method="post">
+                        <div class="row">
+                            <div class="col-md-12 pl-1">
+                                <div class="form-group">
+                                    <label asp-for="NextSchedule"></label>
+                                    <input class="form-control" asp-for="NextSchedule">
+                                    <span asp-validation-for="NextSchedule" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <button type="submit" class="btn btn-primary">Change Next Email Schedule</button>
+                                </div>
+                            </div>
+                        </div>
+                        @Html.AntiForgeryToken()
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

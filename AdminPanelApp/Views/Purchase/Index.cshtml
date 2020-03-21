@@ -1,0 +1,57 @@
+﻿@using AdminPanelApp.Common
+@using AdminPanelApp.Services.Contracts
+@using AdminPanelApp.Models.Enums
+@using Microsoft.AspNetCore.Identity
+@inject IAdminService adminService
+@inject SignInManager<IdentityUser> SignInManager
+@inject UserManager<IdentityUser> UserManager
+@{
+    ViewData["Title"] = "Create Purchase Requisition";
+    ViewData["ActivePage"] = MenuPages.Purchase;
+    var info = await adminService.ManagerInfo(this.User.Identity.Name);
+    var hotels = await adminService.GetAllHotels();
+}
+<div class="content">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="title">Create Purchase Requisition</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" asp-action="CreateRequisition" asp-controller="Purchase">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label>Location</label>
+                                    @if (await SignInManager.UserManager.IsInRoleAsync(await UserManager.GetUserAsync(this.User), "Admin"))
+                                    {
+                                        <select name="location" class="form-control nav-item dropdown">
+                                            @foreach (var hotel in hotels)
+                                            {
+                                                <option value="@hotel.Name">@hotel.Name</option>
+                                            }
+                                        </select>
+                                    }
+                                    else
+                                    {
+                                        <input type="text" class="form-control" value="@info.Hotel" disabled/>
+                                        <input type="hidden" name="location" value="@info.Hotel" />
+                                    }
+                                    <input type="hidden" name="user" value="@this.User.Identity.Name" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <button class="btn btn-primary btn-block" style="color:white;">Create<i class="now-ui-icons ui-1_simple-add"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,137 @@
+﻿@using AdminPanelApp.Common
+@using AdminPanelApp.Services.Contracts
+@model ChangeModel
+@inject IProductService ProductService
+@{
+    ViewData["Title"] = "Change Product Supplier";
+    ViewData["ActivePage"] = MenuPages.ChangeProductSupplier;
+    var products = await this.ProductService.GetAddedProductsDesc();
+    var suppliers = await this.ProductService.GetSupplierNames();
+}
+<div class="content">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="title">Change Product Supplier</h5>
+                </div>
+                <div class="card-body">
+                    <form asp-action="ChangeSupplierToProduct" asp-controller="Management" method="post">
+                        <div class="row">
+                            <div class="col-md-12 pl-1">
+                                <div class="form-group">
+                                    <label asp-for="ChangeProductSupplierModel.ProductId"></label>
+                                    <select asp-for="ChangeProductSupplierModel.ProductId" onchange="GetSupplier(this.value)" class="form-control nav-item dropdown">
+                                        <option selected>Select Product</option>
+                                        @for (int i = 0; i < products.Count; i++)
+                                        {
+                                            <option value="@products[i].Id">@products[i].Name</option>
+                                        }
+                                    </select>
+                                    <span asp-validation-for="ChangeProductSupplierModel.ProductId" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12 pl-1">
+                                <div class="form-group">
+                                    <label asp-for="ChangeProductSupplierModel.CurrentSupplier"></label>
+                                    <input id="currentSupplierName" class="form-control" asp-for="ChangeProductSupplierModel.CurrentSupplier" disabled>
+                                    <span asp-validation-for="ChangeProductSupplierModel.CurrentSupplier" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12 pl-1">
+                                <div class="form-group">
+                                    <label asp-for="ChangeProductSupplierModel.NewSupplierIndex"></label>
+                                    <select asp-for="ChangeProductSupplierModel.NewSupplierIndex" class="form-control nav-item dropdown">
+                                        <option selected>Select New Supplier</option>
+                                        @for (int i = 0; i < suppliers.Count; i++)
+                                        {
+                                            <option value="@i">@suppliers[i].Name</option>
+                                        }
+                                    </select>
+                                    <span asp-validation-for="ChangeProductSupplierModel.NewSupplierIndex" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <button type="submit" class="btn btn-primary">Change Product Supplier</button>
+                                </div>
+                            </div>
+                        </div>
+                        @Html.AntiForgeryToken()
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="title">Change Supplier</h5>
+                </div>
+                <div class="card-body">
+                    <form asp-action="ChangeSupplier" asp-controller="Management" method="post">
+                        <div class="row">
+                            <div class="col-md-12 pl-1">
+                                <div class="form-group">
+                                    <label asp-for="ChangeSupplierModel.CurrentSupplierIndex"></label>
+                                    <select asp-for="ChangeSupplierModel.CurrentSupplierIndex" class="form-control nav-item dropdown">
+                                        <option selected>Select New Supplier</option>
+                                        @for (int i = 0; i < suppliers.Count; i++)
+                                        {
+                                            <option value="@i">@suppliers[i].Name</option>
+                                        }
+                                    </select>
+                                    <span asp-validation-for="ChangeSupplierModel.CurrentSupplierIndex" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12 pl-1">
+                                <div class="form-group">
+                                    <label asp-for="ChangeSupplierModel.NewSupplierIndex"></label>
+                                    <select asp-for="ChangeSupplierModel.NewSupplierIndex" class="form-control nav-item dropdown">
+                                        <option selected>Select New Supplier</option>
+                                        @for (int i = 0; i < suppliers.Count; i++)
+                                        {
+                                            <option value="@i">@suppliers[i].Name</option>
+                                        }
+                                    </select>
+                                    <span asp-validation-for="ChangeSupplierModel.NewSupplierIndex" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <button type="submit" class="btn btn-primary">Change Supplier</button>
+                                </div>
+                            </div>
+                        </div>
+                        @Html.AntiForgeryToken()
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        function GetSupplier(productId) {
+            $.ajax({
+                type: 'GET',
+                data: { productId: productId },
+                url: '@Url.Action("GetProductSupplierName", "Values", new { httproute = "api"})',
+                success: function (result) {
+                    console.log(result);
+                    $("#currentSupplierName").val(result);
+                }
+            })
+        }
+    </script>
+}

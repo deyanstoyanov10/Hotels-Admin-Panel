@@ -1,0 +1,434 @@
+﻿@using AdminPanelApp.Common
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<IdentityUser> SignInManager
+@inject UserManager<IdentityUser> UserManager
+@{
+    ViewData["Title"] = "Dashboard";
+    ViewData["ActivePage"] = MenuPages.Dashboard;
+}
+<style>
+    .table-wrapper {
+        height: 355px;
+        overflow: auto;
+    }
+</style>
+@if (await SignInManager.UserManager.IsInRoleAsync(await UserManager.GetUserAsync(this.User), "Admin"))
+{
+    <div class="content">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="title">Requisition Items</h5>
+                    </div>
+                    <div class="card-body">
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="table-wrapper">
+                                    <table class="table">
+                                        <thead class="text-primary">
+                                        <th>Status</th>
+                                        <th>Name</th>
+                                        <th>Packaging</th>
+                                        <th>Unit</th>
+                                        <th>Quantity</th>
+                                        <th>Category</th>
+                                        <th>Price</th>
+                                        <th>Supplier</th>
+                                        <th>Approve</th>
+                                        </thead>
+                                        <tbody id="appendProducts">
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <form id="formSumbit" asp-action="ApproveOrRejectRequisition" asp-controller="Home" method="post">
+                            <div class="row">
+                                <div class="col-md-6 pr-1">
+                                    <div class="form-group">
+                                        <button id="buttonConfirm" name="button" class="btn btn-success btn-block" style="color:white;" onclick="Check()" value="Yes">Confirm</button>
+                                    </div>
+                                </div>
+                                <div id="requisitionIdDiv">
+                                    <input id="requisitionId" name="requisitionId" type="hidden">
+                                </div>
+
+                                <div class="col-md-6 pr-1">
+                                    <div class="form-group">
+                                        <button id="buttonReject" name="button" class="btn btn-danger btn-block" style="color:white;" onclick="Check()" value="No">Reject</button>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="table-wrapper">
+                        <table class="table">
+                            <thead class="text-primary">
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th>Location</th>
+                            <th>TotalPrice</th>
+                            <th>From</th>
+                            <th>Open</th>
+                            </thead>
+                            <tbody id="appendRequisitions">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @section Scripts{
+        <script>
+        $(document).ready(function () {
+            UpdateTable();
+        })
+
+        function UpdateTable() {
+            $(document).ready(function () {
+                $.ajax({
+                    type: 'GET',
+                    url: '@Url.Action("UpdateRequisitionTable", "Values", new { httproute = "api" })',
+                    success: function (result) {
+                        var requisitions = JSON.parse(result);
+                        var requisitionsCount = requisitions.length;
+                        var append = '';
+                        for (var i = 0; i < requisitionsCount; i++) {
+                            append += "<tr><td style=\"width:15%;\"><span class=\"badge badge-warning\">Pending</span></td>";
+
+                            var date = new Date(requisitions[i].Date);
+                            var dateFormat = '';
+
+                            if (date.getHours() < 10) {
+                                dateFormat += '0' + date.getHours() + ':';
+                            }
+                            else {
+                                dateFormat += date.getHours() + ':';
+                            }
+
+                            if (date.getMinutes() < 10) {
+                                dateFormat += '0' + date.getMinutes();
+                            }
+                            else {
+                                dateFormat += date.getMinutes();
+                            }
+
+                            dateFormat += " ";
+                            if (date.getDate() < 10) {
+                                dateFormat += '0' + date.getDate();
+                            }
+                            else {
+                                dateFormat += date.getDate();
+                            }
+                            dateFormat += "-";
+
+                            if (date.getMonth() < 10) {
+                                dateFormat += '0' + date.getMonth();
+                            }
+                            else {
+                                dateFormat += date.getMonth();
+                            }
+                            dateFormat += "-";
+
+                            dateFormat += ""+date.getFullYear()+"";
+                            append += "<td>"+dateFormat+"</td>";
+                            append += "<td>" + requisitions[i].Location + "</td>";
+
+                            var formatter = new Intl.NumberFormat('en-US', {
+                                style: 'currency',
+                                currency: 'DKK'
+                            });
+
+                            append += "<td>"+formatter.format(requisitions[i].Total)+"</td>";
+                            append += "<td>"+requisitions[i].AddedBy+"</td>";
+                            append += "<td><button class=\"btn btn-primary\" value=\""+requisitions[i].Id+"\" onclick=\"OpenRequisition(this.value)\"><i class=\"now-ui-icons arrows-1_minimal-up\"></i></button></td></tr>";
+                        }
+                        $("#appendRequisitions").html("");
+                        $("#appendRequisitions").html(append);
+                    }
+                })
+            })
+        }
+
+        function OpenRequisition(requisitionId) {
+            $(document).ready(function () {
+                $.ajax({
+                    type: 'GET',
+                    data: {requisitionId: requisitionId },
+                    url: '@Url.Action("GetProductsForRequisition", "Values", new { httproute = "api" })',
+                    success: function (result) {
+                        var products = JSON.parse(result);
+                        var productsCount = products.length;
+                        var append = '';
+                        for (var i = 0; i < productsCount; i++) {
+                            append += "<tr><td style=\"width:15%;\">";
+                            if (products[i].Status == 0) {
+                                append += "<span class=\"badge badge-warning\">Pending</span>";
+                            }
+                            else if (products[i].Status == 1) {
+                                append += "<span class=\"badge badge-success\">Approved</span>";
+                            }
+                            else if (products[i].Status == 2) {
+                                append += "<span class=\"badge badge-danger\">Rejected</span>";
+                            }
+                            append += "</td>";
+                            append += "<td>" + products[i].Name + "</td>";
+                            append += "<td>" + products[i].Packaging + "</td>";
+                            append += "<td>"+products[i].Unit+"</td>";
+                            append += "<td>"+products[i].Quantity+"</td>";
+                            append += "<td>"+products[i].Category+"</td>";
+                            append += "<td>"+products[i].Price+"</td>";
+                            append += "<td>"+products[i].Supplier+"</td>";
+                            append += "<td><button class=\"btn btn-success\" value=\""+products[i].Id+"\" onclick=\"ApproveProduct(this.value)\"><i class=\"now-ui-icons ui-1_check\"></i></button><button class=\"btn btn-danger\" value=\""+products[i].Id+"\" onclick=\"RejectProduct(this.value)\"><i class=\"now-ui-icons ui-1_simple-remove\"></i></button></td></tr>";
+
+                        }
+
+                        $("#requisitionId").val("");
+                        $("#requisitionId").val(requisitionId);
+
+                        $("#appendProducts").html("");
+                        $("#appendProducts").html(append);
+                    }
+                })
+            })
+        }
+
+        function ApproveProduct(productId) {
+            $(document).ready(function () {
+                var requisitionId = document.getElementById("requisitionId").value;
+                $.ajax({
+                    type: 'GET',
+                    data: { productId: productId, status: 1 },
+                    url: '@Url.Action("ApproveOrRejectProduct", "Values", new { httproute = "api" })',
+                    success: function (result) {
+                        OpenRequisition(requisitionId);
+                    }
+                })
+            })
+        }
+
+        function RejectProduct(productId) {
+            $(document).ready(function () {
+                var requisitionId = document.getElementById("requisitionId").value;
+                $.ajax({
+                    type: 'GET',
+                    data: { productId: productId, status: 2 },
+                    url: '@Url.Action("ApproveOrRejectProduct", "Values", new { httproute = "api" })',
+                    success: function (result) {
+                        OpenRequisition(requisitionId);
+                    }
+                })
+            })
+        }
+        </script>
+
+        <script>
+            function Check() {
+                var value = document.getElementById("requisitionId").value;
+                if (value == null || value == "") {
+                    alert("You need to open requisition!");
+                    event.preventDefault();
+                    return false;
+                }
+                else {
+                    return true;
+                }
+                
+            }
+        </script>
+    }
+}
+else
+{
+    <div class="content">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="title">Requisition Items</h5>
+                    </div>
+                    <div class="card-body">
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="table-wrapper">
+                                    <table class="table">
+                                        <thead class="text-primary">
+                                        <th>Status</th>
+                                        <th>Name</th>
+                                        <th>Packaging</th>
+                                        <th>Quantity</th>
+                                        <th>Category</th>
+                                        <th>Supplier</th>
+                                        </thead>
+                                        <tbody id="appendProducts">
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="table-wrapper">
+                        <table class="table">
+                            <thead class="text-primary">
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th>Location</th>
+                            <th>From</th>
+                            <th>Open</th>
+                            </thead>
+                            <tbody id="appendRequisitions">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @section Scripts{ 
+        <script>
+            $(document).ready(function () {
+            UpdateTable();
+        })
+
+        function UpdateTable() {
+            $(document).ready(function () {
+                $.ajax({
+                    type: 'GET',
+                    data: { user: '@User.Identity.Name.ToString()'},
+                    url: '@Url.Action("UpdateRequisitionTableForUsers", "Values", new { httproute = "api" })',
+                    success: function (result) {
+                        var requisitions = JSON.parse(result);
+                        var requisitionsCount = requisitions.length;
+                        var append = '';
+                        for (var i = 0; i < requisitionsCount; i++) {
+                            append += "<tr><td style=\"width:15%;\">";
+
+                            if (requisitions[i].Status == 1) {
+                                append += "<span class=\"badge badge-warning\">Pending</span>";
+                            }
+                            else if (requisitions[i].Status == 2) {
+                                append += "<span class=\"badge badge-success\">Approved</span>";
+                            }
+                            else if (requisitions[i].Status == 3) {
+                                append += "<span class=\"badge badge-danger\">Rejected</span>";
+                            }
+
+                            var date = new Date(requisitions[i].Date);
+                            var dateFormat = '';
+
+                            if (date.getHours() < 10) {
+                                dateFormat += '0' + date.getUTCHours() + ':';
+                            }
+                            else {
+                                dateFormat += date.getUTCHours() + ':';
+                            }
+
+                            if (date.getMinutes() < 10) {
+                                dateFormat += '0' + date.getUTCMinutes();
+                            }
+                            else {
+                                dateFormat += date.getUTCMinutes();
+                            }
+
+                            dateFormat += " ";
+                            if (date.getDate() < 10) {
+                                dateFormat += '0' + date.getUTCDate();
+                            }
+                            else {
+                                dateFormat += date.getUTCDate();
+                            }
+                            dateFormat += "-";
+
+                            if (date.getMonth() < 10) {
+                                dateFormat += '0' + date.getUTCMonth();
+                            }
+                            else {
+                                dateFormat += date.getUTCMonth();
+                            }
+                            dateFormat += "-";
+
+                            dateFormat += ""+date.getUTCFullYear()+"";
+                            append += "<td>"+dateFormat+"</td>";
+                            append += "<td>" + requisitions[i].Location + "</td>";
+                            
+                            append += "<td>" + requisitions[i].AddedBy + "</td>";
+                            if (requisitions[i].Status == 1) {
+                                append += "<td><button class=\"btn btn-primary\" value=\"" + requisitions[i].Id + "\" onclick=\"OpenRequisition(this.value)\" disabled><i class=\"now-ui-icons arrows-1_minimal-up\"></i></button></td></tr>";
+                            }
+                            else {
+                                append += "<td><button class=\"btn btn-primary\" value=\"" + requisitions[i].Id + "\" onclick=\"OpenRequisition(this.value)\"><i class=\"now-ui-icons arrows-1_minimal-up\"></i></button></td></tr>";
+                            }
+                        }
+                        $("#appendRequisitions").html("");
+                        $("#appendRequisitions").html(append);
+                    }
+                })
+            })
+            }
+
+            function OpenRequisition(requisitionId) {
+            $(document).ready(function () {
+                $.ajax({
+                    type: 'GET',
+                    data: {requisitionId: requisitionId },
+                    url: '@Url.Action("GetProductsForRequisition", "Values", new { httproute = "api" })',
+                    success: function (result) {
+                        var products = JSON.parse(result);
+                        var productsCount = products.length;
+                        var append = '';
+                        for (var i = 0; i < productsCount; i++) {
+
+                            
+
+                            if (products[i].Status == 2) {
+                                append += "<tr bgcolor=\"#ed615f\">";
+                            }
+                            else {
+                                append += "<tr>";
+                            }
+
+                            append += "<td style=\"width:15%;\">";
+                            if (products[i].Status == 0) {
+                                append += "<span class=\"badge badge-warning\">Pending</span>";
+                            }
+                            else if (products[i].Status == 1) {
+                                append += "<span class=\"badge badge-success\">Approved</span>";
+                            }
+                            else if (products[i].Status == 2) {
+                                append += "<span class=\"badge badge-danger\">Rejected</span>";
+                            }
+                            append += "</td>";
+                            append += "<td>" + products[i].Name + "</td>";
+                            append += "<td>" + products[i].Packaging + "</td>";
+                            append += "<td>"+products[i].Quantity+"</td>";
+                            append += "<td>"+products[i].Category+"</td>";
+                            append += "<td>"+products[i].Supplier+"</td>";
+
+                        }
+
+                        $("#appendProducts").html("");
+                        $("#appendProducts").html(append);
+                    }
+                })
+            })
+        }
+        </script>
+    }
+}

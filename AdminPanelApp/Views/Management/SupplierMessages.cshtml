@@ -1,0 +1,80 @@
+﻿@using AdminPanelApp.Common
+@using AdminPanelApp.Services.Contracts
+@inject IAdminService AdminService
+@{
+    ViewData["Title"] = "Supplier Messages";
+    ViewData["ActivePage"] = MenuPages.SupplierMessages;
+    var suppliers = await this.AdminService.GetAllSuppliers();
+    var nextSchedule = await this.AdminService.GetNextProductSchedule();
+    string[] monthNames = { "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
+}
+<div class="content">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="title">Next Schedule: @monthNames[nextSchedule.Month - 1] @nextSchedule.Year</h5>
+                </div>
+                <div class="card-body">
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="table-wrapper">
+                                <table class="table">
+                                    <thead class="text-primary">
+                                    <th>Supplier Id</th>
+                                    <th>Supplier Name</th>
+                                    <th>Email</th>
+                                    <th>Download Table</th>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var supplier in suppliers)
+                                        {
+                                            <tr>
+                                                <td>@supplier.Id</td>
+                                                <td>@supplier.Name</td>
+                                                <td>@supplier.Email</td>
+                                                <td><form asp-action="DownloadProductTable" asp-controller="Management" method="post"><input name="supplierId" type="hidden" value="@supplier.Id" /><input name="dateIndex" type="hidden" value="0" /><button class="btn btn-primary"><i class="now-ui-icons arrows-1_minimal-up"></i></button>@Html.AntiForgeryToken()</form></td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    @if (DateTime.UtcNow >= nextSchedule)
+                    {
+                        <form asp-action="ApproveSupplierMessages" asp-controller="Management" method="post">
+                            <div class="row">
+                                <div class="col-md-12 pr-1">
+                                    <div class="form-group">
+                                        <button id="approveEmails" class="btn btn-success btn-block" style="color:white;">Confirm And Send Emails To Suppliers</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    }
+                    else
+                    {
+                        <form method="post">
+                            <div class="row">
+                                <div class="col-md-12 pr-1">
+                                    <div class="form-group">
+                                        <button class="btn btn-success btn-block" style="color:white;" disabled>Confirm And Send Emails To Suppliers</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts{ 
+<script>
+    $("#approveEmails").on('click', function () {
+        alert("Are you sure want to send supplier emails?")
+    })
+</script>
+}

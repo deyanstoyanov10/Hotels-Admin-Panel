@@ -1,0 +1,340 @@
+﻿@using AdminPanelApp.Common
+@using AdminPanelApp.Models.Enums
+@using AdminPanelApp.Services.Contracts
+@model RequisitionModel
+@inject IRequisitionService  RequisitionService
+@{
+    ViewData["Title"] = "Create Requisition";
+    ViewData["ActivePage"] = MenuPages.Purchase;
+    var requisitionId = ViewContext.RouteData.Values["id"].ToString();
+    var requisition = await RequisitionService.GetRequisitionDetails(requisitionId);
+}
+@*<span class="badge badge-pill badge-success ml-2">1</span>*@
+<style>
+    .table-wrapper
+{
+    height: 400px;
+    overflow: auto;
+}
+</style>
+<div class="content">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="title">Add Products</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-7 pr-1">
+                            <div class="input-group no-border">
+                                <input type="text" id="search" class="form-control" placeholder="Search...">
+                                <div class="input-group-append">
+                                    <div class="input-group-text">
+                                        <i class="now-ui-icons ui-1_zoom-bold"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-5 pr-1">
+                            <div class="form-group">
+                                <select id="selectCategory" class="form-control nav-item dropdown" asp-items="Html.GetEnumSelectList<Category>()">
+                                    <option selected>Select Category</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="table-wrapper">
+                            <table class="table">
+                                <thead class="text-primary" style="font-size:9px;">
+                                <th>Product Image</th>
+                                <th>Name</th>
+                                <th>Packaging</th>
+                                <th>Category</th>
+                                <th>Quantity</th>
+                                <th>Add product</th>
+                                </thead>
+                                <tbody id="append">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="title">Purchase Requisition</h5>
+                </div>
+                <div class="card-body">
+                    <input type="hidden" id="Total" value=""/>
+                    <form asp-action="ConfirmRequisition" asp-controller="Purchase" method="post">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label>Requester</label>
+                                    <input type="text" asp-for="AddedBy" class="form-control" value="@requisition.AddedBy" readonly>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label>Location</label>
+                                    <input type="text" asp-for="Location" class="form-control" value="@requisition.Location" readonly>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 pr-1">
+                                <div class="form-group">
+                                    <label>Date</label>
+                                    <input type="text" asp-for="Date" class="form-control" value="@requisition.Date" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-6 px-1">
+                                <div class="form-group">
+                                    <label>Status</label>
+                                    <input type="text" class="form-control" value="Open" readonly>
+                                    <input type="hidden" asp-for="Status" class="form-control" value="@requisition.Status">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <button id="buttonConfirm" name="button" class="btn btn-success btn-block" style="color:white;" value="Yes">Confirm</button>
+                                    <input type="hidden" asp-for="RequisitionId" value="@requisitionId" class="form-control">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <button id="buttonDelete" name="button" class="btn btn-danger btn-block" style="color:white;" value="No">Delete</button>
+                                </div>
+                            </div>
+                        </div>
+                        @Html.AntiForgeryToken()
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="table-wrapper">
+                    <table class="table">
+                        <thead class="text-primary">
+                        <th>Status</th>
+                        <th>Name</th>
+                        <th>Packaging</th>
+                        <th>Quantity</th>
+                        <th>Category</th>
+                        <th>Supplier</th>
+                        <th>Remove</th>
+                        </thead>
+                        <tbody id="appendProducts">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+    @section Scripts{
+        <partial name="_ValidationScriptsPartial" />
+        <script>
+        $(document).ready(function () {
+            $.ajax({
+                type: 'GET',
+                url: '@Url.Action("GetAllItemsDesc", "Values", new { httproute = "api"})',
+                success: function (result) {
+                    var products = JSON.parse(result);
+                    var productsCount = products.length;
+                    var append = '';
+                    for (var i = 0; i < productsCount; i++) {
+                        append += "<tr><td style=\"width:15%;\"><img class=\"img-rounded\" src=\"data:image/png;base64,"+products[i].Picture+"\"/></td>";
+                        append += "<td style=\"width:15%;\">"+products[i].Name+"</td>";
+                        append += "<td style=\"width:10%;\">"+products[i].Packaging+"</td>";
+                        append += "<td style=\"width:20%;\">"+products[i].Category+"</td>";
+                        append += "<td style=\"width:20%;\"><input id=\""+products[i].Id+"\" type=\"number\" class=\"form-control\" min=\"1\"></td>";
+                        append += "<td style=\"width:20%;\"><button class=\"btn btn-primary\" id=\"add\" value=\""+products[i].Id+"\" onclick=\"AddProduct(this.value)\">Add</button></td></tr>";
+                    }
+                    $("#append").html("");
+                    $("#append").html(append);
+                }
+            })
+        })
+
+        $(document).ready(function () {
+            $("#search").on('keypress', function () {
+                var categoryIdValue = document.getElementById("selectCategory").value;
+                var searchKey = document.getElementById("search").value;
+                if (categoryIdValue >= 0) {
+                    $.ajax({
+                        type: 'GET',
+                        data: { searchKey: searchKey, categoryId: categoryIdValue },
+                        url: '@Url.Action("GetItemsBySearchAndCategory", "Values", new { httproute = "api"})',
+                        success: function (result) {
+                            var products = JSON.parse(result);
+                            var productsCount = products.length;
+                            var append = '';
+                            for (var i = 0; i < productsCount; i++) {
+                                append += "<tr><td style=\"width:15%;\"><img class=\"img-rounded\" src=\"data:image/png;base64," + products[i].Picture + "\"/></td>";
+                                append += "<td style=\"width:15%;\">" + products[i].Name + "</td>";
+                                append += "<td style=\"width:10%;\">" + products[i].Packaging + "</td>";
+                                append += "<td style=\"width:20%;\">" + products[i].Category + "</td>";
+                                append += "<td style=\"width:20%;\"><input id=\""+products[i].Id+"\" type=\"number\" class=\"form-control\" min=\"1\"></td>";
+                                append += "<td style=\"width:20%;\"><button class=\"btn btn-primary\" id=\"add\" value=\"" + products[i].Id + "\" onclick=\"AddProduct(this.value)\">Add</button></td></tr>";
+                            }
+                            $("#append").html("");
+                            $("#append").html(append);
+                        }
+                    })
+                }
+                else {
+                    $.ajax({
+                        type: 'GET',
+                        data: { searchKey: searchKey },
+                        url: '@Url.Action("GetItemsBySearch", "Values", new { httproute = "api"})',
+                        success: function (result) {
+                            var products = JSON.parse(result);
+                            var productsCount = products.length;
+                            var append = '';
+                            for (var i = 0; i < productsCount; i++) {
+                                append += "<tr><td style=\"width:15%;\"><img class=\"img-rounded\" src=\"data:image/png;base64," + products[i].Picture + "\"/></td>";
+                                append += "<td style=\"width:15%;\">" + products[i].Name + "</td>";
+                                append += "<td style=\"width:10%;\">" + products[i].Packaging + "</td>";
+                                append += "<td style=\"width:20%;\">" + products[i].Category + "</td>";
+                                append += "<td style=\"width:20%;\"><input id=\""+products[i].Id+"\" type=\"number\" class=\"form-control\" min=\"1\"></td>";
+                                append += "<td style=\"width:20%;\"><button class=\"btn btn-primary\" id=\"add\" value=\"" + products[i].Id + "\" onclick=\"AddProduct(this.value)\">Add</button></td></tr>";
+                            }
+                            $("#append").html("");
+                            $("#append").html(append);
+                        }
+                    })
+                }
+            })
+        })
+
+        $(document).ready(function () {
+            $("#selectCategory").on('change', function () {
+                var categoryIdValue = document.getElementById("selectCategory").value;
+                $.ajax({
+                    type: 'GET',
+                    data: { categoryId: categoryIdValue },
+                    url: '@Url.Action("GetItemsByCategory", "Values", new { httproute = "api"})',
+                    success: function (result) {
+                        var products = JSON.parse(result);
+                        var productsCount = products.length;
+                        var append = '';
+                        for (var i = 0; i < productsCount; i++) {
+                            append += "<tr><td style=\"width:15%;\"><img class=\"img-rounded\" src=\"data:image/png;base64,"+products[i].Picture+"\"/></td>";
+                            append += "<td style=\"width:15%;\">"+products[i].Name+"</td>";
+                            append += "<td style=\"width:10%;\">"+products[i].Packaging+"</td>";
+                            append += "<td style=\"width:20%;\">"+products[i].Category+"</td>";
+                            append += "<td style=\"width:20%;\"><input id=\""+products[i].Id+"\" type=\"number\" class=\"form-control\" min=\"1\"></td>";
+                            append += "<td style=\"width:20%;\"><button class=\"btn btn-primary\" id=\"add\" value=\""+products[i].Id+"\" onclick=\"AddProduct(this.value)\">Add</button></td></tr>";
+                        }
+                        $("#append").html("");
+                        $("#append").html(append);
+                    }
+                })
+            })
+        })
+        </script>
+
+        <script>
+        $(document).ready(function () {
+            UpdateTable();
+        })
+
+        function AddProduct(productId) {
+            $(document).ready(function () {
+                var quantity = document.getElementById(productId).value;
+                $.ajax({
+                    type: 'GET',
+                    data: { productId: productId, requisitionId: '@requisitionId', quantity: quantity },
+                    url: '@Url.Action("AddProductToRequisition", "Values", new { httproute = "api"})',
+                    success: function (result) {
+                        UpdateTable();
+                        CountPrice();
+                    }
+                })
+            })
+        }
+
+        
+
+        function RemoveProduct(productId) {
+            $(document).ready(function () {
+                $.ajax({
+                    type: 'GET',
+                    data: { productId: productId },
+                    url: '@Url.Action("RemoveProductFromRequistion", "Values", new { httproute = "api"})',
+                    success: function (result) {
+                        UpdateTable();
+                        CountPrice();
+                    }
+                })
+            })
+        }
+
+        function CountPrice() {
+            $(document).ready(function () {
+                $.ajax({
+                    type: 'GET',
+                    data: { requisitionId: '@requisitionId' },
+                    url: '@Url.Action("CountPrice", "Values", new { httproute = "api"})',
+                    success: function (result) {
+                        $("#Total").val(result);
+                    }
+                })
+            })
+            }
+
+        function UpdateTable() {
+            $(document).ready(function () {
+                $.ajax({
+                    type: 'GET',
+                    data: { requisitionId: '@requisitionId' },
+                    url: '@Url.Action("UpdateProductCart", "Values", new { httproute = "api"})',
+                    success: function (result) {
+                        var products = JSON.parse(result);
+                        var productsCount = products.length;
+                        var append = '';
+                        for (var i = 0; i < productsCount; i++) {
+                            append += "<tr><td style=\"width:15%;\"><span class=\"badge badge-warning\">Pending</span></td>";
+                            append += "<td>" + products[i].Name + "</td>";
+                            append += "<td>" + products[i].Packaging + "</td>";
+                            append += "<td>"+products[i].Quantity+"</td>";
+                            append += "<td>"+products[i].Category+"</td>";
+                            append += "<td>"+products[i].Supplier+"</td>";
+                            append += "<td><button class=\"btn btn-danger\" id=\"remove\" value=\""+products[i].Id+"\" onclick=\"RemoveProduct(this.value)\"><i class=\"now-ui-icons ui-1_simple-remove\"></i></button></td></tr>";
+                        }
+                        $("#appendProducts").html("");
+                        $("#appendProducts").html(append);
+                    }
+                })
+            })
+        }
+        </script>
+
+        <script>
+            $("#buttonConfirm").on('click', function () {
+                var value = document.getElementById("Total").value;
+                if (value > 0) {
+                    return true;
+                }
+                else {
+                    alert("You need to add at least one item!");
+                    return false;
+                }
+            })
+        </script>
+    }
