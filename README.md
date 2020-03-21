@@ -11,16 +11,16 @@ When the day for delivery comes the logistics manager is logging in to the syste
 
 ### Pictures
  #### Dashboard
- ![inventory](https://github.com/deyanstoyanov10/Cars-Web-Application/blob/master/CarsWebApp/wwwroot/images/dashboard.png)
+ ![inventory](https://github.com/deyanstoyanov10/Hotels-Admin-Panel/tree/master/AdminPanelApp/wwwroot/images/dashboard.png)
  
  #### PurchaseRequisition
- ![inventory](https://github.com/deyanstoyanov10/Cars-Web-Application/blob/master/CarsWebApp/wwwroot/images/purchaseRequisition.png)
+ ![inventory](https://github.com/deyanstoyanov10/Hotels-Admin-Panel/tree/master/AdminPanelApp/wwwroot/images/purchaseRequisition.png)
  
  #### History
- ![inventory](https://github.com/deyanstoyanov10/Cars-Web-Application/blob/master/CarsWebApp/wwwroot/images/history.png)
+ ![inventory](https://github.com/deyanstoyanov10/Hotels-Admin-Panel/tree/master/AdminPanelApp/wwwroot/images/history.png)
  
  #### And More
- ![inventory](https://github.com/deyanstoyanov10/Cars-Web-Application/blob/master/CarsWebApp/wwwroot/images/adminpanel.jpg)
+ ![inventory](https://github.com/deyanstoyanov10/Hotels-Admin-Panel/tree/master/AdminPanelApp/wwwroot/images/adminpanel.jpg)
  
 ### Installing
 
