@@ -4,6 +4,8 @@
     using System.Threading.Tasks;
     using System.Collections.Generic;
 
+    using Microsoft.EntityFrameworkCore;
+
     using Data;
     using Models;
     using Services.Contracts;
@@ -25,7 +27,7 @@
             requisition.Status = status;
             if (status == 3)
             {
-                var products = this.context.Product.Where(x => x.RequisitionId == requisitionId).ToList();
+                var products = await this.context.Product.Where(x => x.RequisitionId == requisitionId).ToListAsync();
                 var productsCount = products.Count;
                 for (int i = 0; i < productsCount; i++)
                 {
@@ -34,7 +36,7 @@
                 }
             }
 
-            var approvedProducts = this.context.Product.Where(x => x.RequisitionId == requisitionId && x.Status == 2).Select(x => new { Price = x.Price, Quanity = x.Quantity}).ToList();
+            var approvedProducts = await this.context.Product.Where(x => x.RequisitionId == requisitionId && x.Status == 2).Select(x => new { Price = x.Price, Quanity = x.Quantity}).ToListAsync();
             uint totalCost = 0;
             for (int i = 0; i < approvedProducts.Count; i++)
             {
@@ -56,7 +58,7 @@
 
         public async Task<List<Requisitions>> GetRequisitionsForApproval()
         {
-            var requisitions = this.context.Requisitions.Where(x => x.Status == 1 || x.Status == 0).OrderByDescending(x => x.Date).ToList();
+            var requisitions = await this.context.Requisitions.Where(x => x.Status == 1 || x.Status == 0).OrderByDescending(x => x.Date).ToListAsync();
             int count = requisitions.Count;
 
             for (int i = 0; i < count; i++)
@@ -64,20 +66,20 @@
                 requisitions[i].AddedBy = await adminService.GetUserFirstAndLastName(requisitions[i].AddedBy);
             }
 
-            return await Task.Run(() => requisitions);
+            return requisitions;
         }
 
         public async Task<List<Product>> GetProductsFromRequisition(string requisitionId)
         {
-            var products = this.context.Product.Where(x => x.RequisitionId == requisitionId).ToList();
-            return await Task.Run(() => products);
+            var products = await this.context.Product.Where(x => x.RequisitionId == requisitionId).ToListAsync();
+            return products;
         }
 
         //Users Requests
 
         public async Task<List<Requisitions>> GetRequisitionsApprovedOrRejected(string user)
         {
-            var requisitions = this.context.Requisitions.Where(x => (x.Status == 1 || x.Status == 2 || x.Status == 3) && x.AddedBy == user).OrderByDescending(x => x.Date).ToList();
+            var requisitions = await this.context.Requisitions.Where(x => (x.Status == 1 || x.Status == 2 || x.Status == 3) && x.AddedBy == user).OrderByDescending(x => x.Date).ToListAsync();
             int count = requisitions.Count;
 
             for (int i = 0; i < count; i++)
@@ -85,7 +87,7 @@
                 requisitions[i].AddedBy = await adminService.GetUserFirstAndLastName(user);
             }
 
-            return await Task.Run(() => requisitions);
+            return requisitions;
         }
     }
 }

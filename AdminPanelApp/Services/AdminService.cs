@@ -17,6 +17,7 @@
 
     using MimeKit;
     using MailKit.Net.Smtp;
+    using Microsoft.EntityFrameworkCore;
 
     public class AdminService : IAdminService
     {
@@ -75,27 +76,27 @@
 
         public async Task<List<Supplier>> GetAllSuppliers()
         {
-            var suppliers = this.context.Suppliers.ToList();
-            return await Task.Run(() => suppliers);
+            var suppliers = await this.context.Suppliers.ToListAsync();
+            return suppliers;
         }
 
         public async Task<List<Hotel>> GetAllHotels()
         {
-            var hotels = this.context.Hotels.ToList();
-            return await Task.Run(() => hotels);
+            var hotels = await this.context.Hotels.ToListAsync();
+            return hotels;
         }
 
         public async Task<DateTime> GetNextProductSchedule()
         {
-            var nextSchedule = this.context.NextProductsSchedule.FirstOrDefault().NextSchedule;
-            return await Task.Run(() => nextSchedule);
+            var nextSchedule = await Task.Run(() => this.context.NextProductsSchedule.FirstOrDefault().NextSchedule);
+            return nextSchedule;
         }    
 
         public async Task ChangeNextProductSchedule(NextScheduleModel nextScheduleModel)
         {
             var currentSchedule = this.context.NextProductsSchedule.FirstOrDefault();
 
-            var requisitions = this.context.Requisitions.Where(x => x.ScheduleFor == currentSchedule.NextSchedule).ToList();
+            var requisitions = await this.context.Requisitions.Where(x => x.ScheduleFor == currentSchedule.NextSchedule).ToListAsync();
 
             for (int i = 0; i < requisitions.Count; i++)
             {
@@ -110,8 +111,8 @@
 
         public async Task<UserInfo> ManagerInfo(string userName)
         {
-            var user = this.context.UsersInfo.Where(x => x.UserName == userName).FirstOrDefault();
-            return await Task.Run(() => user);
+            var user = await Task.Run(() => this.context.UsersInfo.Where(x => x.UserName == userName).FirstOrDefault());
+            return user;
         }
 
         public async Task<string> GetUserFirstAndLastName(string userName)
@@ -135,11 +136,11 @@
         
         public async Task<List<DateTime>> GetLatestMonths()
         {
-            var latestMonths = this.context.PreviousSchedules.Select(x => x.LastSchedules).Take(20).ToList();
+            var latestMonths = await this.context.PreviousSchedules.Select(x => x.LastSchedules).Take(20).ToListAsync();
             var thisMonth = this.context.NextProductsSchedule.FirstOrDefault().NextSchedule;
             latestMonths.Add(thisMonth);
             var orderedMonth = latestMonths.OrderByDescending(x => x).ToList();
-            return await Task.Run(() => orderedMonth);
+            return orderedMonth;
         }
 
         // For History
@@ -149,15 +150,15 @@
             if (hotelIndex == null)
             {
                 var latestMonths = await GetLatestMonths();
-                var requisitions = this.context.Requisitions.Where(x => x.ScheduleFor.Month == latestMonths[index].Month && x.ScheduleFor.Year == latestMonths[index].Year).ToList();
-                return await Task.Run(() => requisitions);
+                var requisitions = await this.context.Requisitions.Where(x => x.ScheduleFor.Month == latestMonths[index].Month && x.ScheduleFor.Year == latestMonths[index].Year).ToListAsync();
+                return requisitions;
             }
             else
             {
                 var latestMonths = await GetLatestMonths();
                 var allHotels = await GetAllHotels();
-                var requisitions = this.context.Requisitions.Where(x => x.ScheduleFor.Month == latestMonths[index].Month && x.ScheduleFor.Year == latestMonths[index].Year && x.Location == allHotels[(int)hotelIndex].Name).ToList();
-                return await Task.Run(() => requisitions);
+                var requisitions = await this.context.Requisitions.Where(x => x.ScheduleFor.Month == latestMonths[index].Month && x.ScheduleFor.Year == latestMonths[index].Year && x.Location == allHotels[(int)hotelIndex].Name).ToListAsync();
+                return requisitions;
             }
         }
 

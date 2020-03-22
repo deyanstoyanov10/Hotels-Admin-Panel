@@ -5,6 +5,8 @@
     using System.Threading.Tasks;
     using System.Collections.Generic;
 
+    using Microsoft.EntityFrameworkCore;
+
     using Data;
     using Models;
     using Services.Contracts;
@@ -45,8 +47,8 @@
 
         public async Task<List<Product>> GetItemsInCart(string requisitionId)
         {
-            var itemsList = this.context.Product.Where(x => x.RequisitionId == requisitionId).ToList();
-            return await Task.Run(() => itemsList);
+            var itemsList = await this.context.Product.Where(x => x.RequisitionId == requisitionId).ToListAsync();
+            return itemsList;
         }
 
         public async Task AddProductToRequisition(int productId, string requisitionId, uint quantity)
@@ -77,9 +79,9 @@
 
         public async Task<uint> CountPrice(string requisitionId)
         {
-            var products = this.context.Product.Where(x => x.RequisitionId == requisitionId)
+            var products = await this.context.Product.Where(x => x.RequisitionId == requisitionId)
                 .Select(x => new { Price = x.Price, Quantity = x.Quantity })
-                .ToList();
+                .ToListAsync();
             uint sum = 0;
 
             for (int i = 0; i < products.Count; i++)
@@ -87,7 +89,7 @@
                 sum += products[i].Price * products[i].Quantity;
             }
 
-            return await Task.Run(() => sum);
+            return sum;
         }
 
         public async Task UpdateRequisitionStatus(string requisitionId, ushort status)

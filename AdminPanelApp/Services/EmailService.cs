@@ -5,6 +5,7 @@
     using AdminPanelApp.Services.Contracts;
     using MailKit.Net.Smtp;
     using Microsoft.AspNetCore.Identity;
+    using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Configuration;
     using MimeKit;
     using System;
@@ -100,7 +101,7 @@
                 .Append("<div style=\"font-size:13px;\">This e-mail and any attachments are confidential and maybe privileged. If you are not a named recipient, please notify the sender immediately and do not disclose the contents to another person, use it for any purpose or store or copy the information in any medium. The contents of any e-mail addressed to our clients and work performed by De 5 Stjerner A/S – Vision Service ApS.</div>")
                 .Append("</div></div></body></html>");
 
-            return await Task.Run(() => sb.ToString());
+            return sb.ToString();
         }
 
         //End Approval message
@@ -180,12 +181,12 @@
 
         private async Task<List<Product>> TakeItemsFromDataBase(DateTime schedule, string supplier, string hotelName)
         {
-            var requisitions = this.context.Requisitions.Where(x => x.ScheduleFor.Day == schedule.Day && x.ScheduleFor.Month == schedule.Month && x.ScheduleFor.Year == schedule.Year && x.Status == 2 && x.Location == hotelName).Select(x => new { Id = x.Id }).ToList();
+            var requisitions = await this.context.Requisitions.Where(x => x.ScheduleFor.Day == schedule.Day && x.ScheduleFor.Month == schedule.Month && x.ScheduleFor.Year == schedule.Year && x.Status == 2 && x.Location == hotelName).Select(x => new { Id = x.Id }).ToListAsync();
             var requisitionsCount = requisitions.Count;
             var productsList = new List<Product>();
             for (int i = 0; i < requisitionsCount; i++)
             {
-                var products = this.context.Product.Where(x => x.RequisitionId == requisitions[i].Id && x.Status == 1 && x.Supplier == supplier).ToList();
+                var products = await this.context.Product.Where(x => x.RequisitionId == requisitions[i].Id && x.Status == 1 && x.Supplier == supplier).ToListAsync();
                 var productsCount = products.Count;
                 for (int j = 0; j < productsCount; j++)
                 {
@@ -193,7 +194,7 @@
                 }
             }
 
-            return await Task.Run(() => productsList);
+            return productsList;
         }
 
         private async Task<string> MakeProductsTable(List<Product> products, string hotelName)
@@ -221,29 +222,30 @@
 
         private async Task<string> GetHotelAddress(string requisitionId)
         {
-            var location = this.context.Requisitions.Where(x => x.Id == requisitionId).Select(x => x.Location).FirstOrDefault();
+            var location = await GetLocation(requisitionId);
             var hotelAddress = this.context.Hotels.Where(x => x.Name == location).Select(x => x.Address).FirstOrDefault();
-            return await Task.Run(() => hotelAddress);
+            
+            return hotelAddress;
         }
 
         private async Task<string> GetLocation(string requisitionId)
         {
-            var location = this.context.Requisitions.Where(x => x.Id == requisitionId).Select(x => x.Location).FirstOrDefault();
-            return await Task.Run(() => location);
+            var location = await Task.Run(() => this.context.Requisitions.Where(x => x.Id == requisitionId).Select(x => x.Location).FirstOrDefault());
+            return location;
         }
 
         // Excel Tables
 
         public async Task<List<Requisitions>> GetRequisitionsForSupplier(int month, int year, ushort status)
         {
-            var requisitions = this.context.Requisitions.Where(x => x.ScheduleFor.Month == month && x.ScheduleFor.Year == year && x.Status == status).ToList();
-            return await Task.Run(() => requisitions);
+            var requisitions = await this.context.Requisitions.Where(x => x.ScheduleFor.Month == month && x.ScheduleFor.Year == year && x.Status == status).ToListAsync();
+            return requisitions;
         }
 
         public async Task<Supplier> GetSupplier(int supplierId)
         {
-            var supplier = this.context.Suppliers.Where(x => x.Id == supplierId).FirstOrDefault();
-            return await Task.Run(() => supplier);
+            var supplier = await Task.Run(() => this.context.Suppliers.Where(x => x.Id == supplierId).FirstOrDefault());
+            return supplier;
         }
 
         public async Task<List<Product>> ProductFilter(List<Requisitions> requisitionsForHotel, string supplierName)
@@ -251,14 +253,14 @@
             var products = new List<Product>();
             for (int i = 0; i < requisitionsForHotel.Count; i++)
             {
-                var subProduct = this.context.Product.Where(x => x.RequisitionId == requisitionsForHotel[i].Id && x.Supplier == supplierName && x.Status == 1).ToList();
+                var subProduct = await this.context.Product.Where(x => x.RequisitionId == requisitionsForHotel[i].Id && x.Supplier == supplierName && x.Status == 1).ToListAsync();
                 for (int j = 0; j < subProduct.Count; j++)
                 {
                     products.Add(subProduct[j]);
                 }
             }
 
-            return await Task.Run(() => products);
+            return products;
         }
 
         public string GetHotelAddressByName(string hotelName)
